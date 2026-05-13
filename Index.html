@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Utah Mighty Five">
+  <meta name="theme-color" content="#0c0b07">
+  <title>Utah Mighty Five · 2026</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0c0b07; --surface:#161410; --surface2:#1e1c14; --border:#2a2418;
+      --accent:#c86b2a; --accent-glow:rgba(200,107,42,0.18); --accent2:#8b2c1a;
+      --text:#ede0c4; --muted:#7a6a52; --dim:#4a4030;
+      --green:#3a6a3a; --green-light:#4a9a4a;
+      --type-drive:#4a8aaa; --type-activity:#c86b2a; --type-lodging:#7060aa;
+      --type-fly:#4a9060; --type-checkin:#c8a02a; --type-visitor:#aa3030;
+      --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+      --hdr:72px; --tabs:46px; --bar:3px;
+      --top:calc(var(--hdr) + var(--tabs) + var(--bar) + var(--safe-top));
+    }
+    html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+      -webkit-font-smoothing:antialiased;}
+    #hdr{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--bg);
+      border-bottom:1px solid var(--border);padding-top:var(--safe-top);}
+    #hdr-inner{height:var(--hdr);display:flex;align-items:center;
+      justify-content:space-between;padding:0 16px;}
+    #trip-title{font-size:20px;font-weight:700;letter-spacing:-.3px;}
+    #trip-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+    #pct{font-size:24px;font-weight:700;color:var(--accent);line-height:1;text-align:right;}
+    #pct-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;text-align:right;}
+    #bar-wrap{height:var(--bar);background:var(--surface2);}
+    #bar-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .5s ease;width:0%;}
+    #tabs{position:fixed;top:calc(var(--hdr) + var(--bar) + var(--safe-top));left:0;right:0;z-index:100;
+      height:var(--tabs);display:flex;overflow-x:auto;overflow-y:hidden;
+      background:var(--bg);border-bottom:1px solid var(--border);
+      -webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    #tabs::-webkit-scrollbar{display:none;}
+    .tab{flex:0 0 auto;height:100%;padding:0 13px;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;cursor:pointer;position:relative;
+      -webkit-tap-highlight-color:transparent;}
+    .tab-lbl{font-size:12px;font-weight:500;color:var(--muted);white-space:nowrap;}
+    .tab.active .tab-lbl{color:var(--accent);font-weight:700;}
+    .tab.active::after{content:'';position:absolute;bottom:0;left:8px;right:8px;
+      height:2px;background:var(--accent);border-radius:2px 2px 0 0;}
+    .tab.alldone .tab-lbl::after{content:' ✓';color:var(--green-light);}
+    #content{position:fixed;top:var(--top);left:0;right:0;bottom:0;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+      padding:14px 12px calc(20px + var(--safe-bottom));background:var(--bg);}
+    .day-hdr{margin-bottom:14px;}
+    .day-hdr h2{font-size:22px;font-weight:700;letter-spacing:-.4px;}
+    .day-hdr p{font-size:12px;color:var(--muted);margin-top:3px;}
+    .card{background:var(--surface);border-radius:13px;margin-bottom:9px;
+      border:1px solid var(--border);overflow:hidden;transition:opacity .3s,background .3s;}
+    .card.done{opacity:.42;}
+    .card-top{display:flex;align-items:center;padding:12px 12px 12px 10px;gap:10px;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    .badge{flex:0 0 auto;font-size:9px;font-weight:700;text-transform:uppercase;
+      letter-spacing:.6px;padding:3px 7px;border-radius:6px;min-width:58px;text-align:center;line-height:1.4;}
+    .b-drive{background:rgba(74,138,170,.15);color:var(--type-drive);}
+    .b-activity{background:rgba(200,107,42,.15);color:var(--type-activity);}
+    .b-lodging{background:rgba(112,96,170,.15);color:var(--type-lodging);}
+    .b-fly{background:rgba(74,144,96,.15);color:var(--type-fly);}
+    .b-checkin{background:rgba(200,160,42,.15);color:var(--type-checkin);}
+    .b-visitor{background:rgba(170,48,48,.15);color:var(--type-visitor);}
+    .card-info{flex:1 1 auto;min-width:0;}
+    .card-loc{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;
+      margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .card-title{font-size:14px;font-weight:600;line-height:1.25;}
+    .card-detail{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3;}
+    .card-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;}
+    .done-btn{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);
+      background:transparent;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:all .25s;-webkit-tap-highlight-color:transparent;}
+    .done-btn.on{background:var(--green);border-color:var(--green);}
+    .done-btn svg{opacity:0;transition:opacity .2s;}
+    .done-btn.on svg{opacity:1;}
+    .chev{width:16px;height:16px;color:var(--dim);transition:transform .25s;}
+    .chev.open{transform:rotate(180deg);}
+    .card-body{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+    .card-body.open{max-height:1200px;}
+    .card-body-inner{padding:10px 12px 14px;border-top:1px solid var(--border);}
+    .alert-tag{display:inline-flex;align-items:center;gap:4px;
+      background:var(--accent-glow);border:1px solid rgba(200,107,42,.3);
+      border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;}
+    .notes{font-size:13px;color:var(--muted);line-height:1.7;white-space:pre-wrap;}
+    .conf-row{margin-top:11px;display:inline-flex;align-items:center;gap:8px;
+      background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:7px 11px;}
+    .conf-lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;}
+    .conf-val{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.5px;}
+    .links-wrap{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
+    .link-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;
+      background:rgba(74,138,170,.10);border:1px solid rgba(74,138,170,.25);
+      border-radius:8px;text-decoration:none;font-size:11px;font-weight:500;color:#5aaacc;
+      -webkit-tap-highlight-color:transparent;white-space:nowrap;transition:background .15s;}
+    .link-pill:active{background:rgba(74,138,170,.25);}
+  </style>
+</head>
+<body>
+<div id="hdr">
+  <div id="hdr-inner">
+    <div>
+      <div id="trip-title">⛰ Utah Mighty Five</div>
+      <div id="trip-sub">Zion · Bryce · Capitol Reef · Arches · Canyonlands</div>
+    </div>
+    <div><div id="pct">0%</div><div id="pct-label">Complete</div></div>
+  </div>
+  <div id="bar-wrap"><div id="bar-fill"></div></div>
+</div>
+<div id="tabs"></div>
+<div id="content"></div>
+<script>
+const DAYS=[
+  { label:'Thu 5/14',title:'Flagstaff',sub:'Overland Expo Check-In',
+    stops:[
+      {id:'0-0',type:'drive',loc:'San Ramon → Flagstaff, AZ',title:'12-Hour Drive',
+       detail:'Leave by 6:00 AM · Arrive by 5 PM',
+       notes:'Leave San Ramon no later than 6am to arrive in Flagstaff by 5pm — the Overland Expo check-in window closes at 6pm.',
+       alert:'Leave by 6:00 AM',conf:null,
+       links:[{label:'San Ramon to Flagstaff',url:'https://maps.app.goo.gl/wc3hzKVNENsL1Aow7'}]},
+      {id:'0-1',type:'checkin',loc:'Flagstaff, AZ',title:'Overland Expo West Check-In',
+       detail:'5:00 – 6:00 PM · Flagstaff Mountain RV & Campground',
+       notes:'1508 Historic Route 66, Flagstaff AZ\nHave your registration docs ready at the gate. Check-in window is 5–6pm.',
+       conf:null,
+       links:[
+         {label:'Registration Docs',url:'https://drive.google.com/file/d/1cP4RXm9IMXbCxgpr35-3BfN325zkt072/view?usp=sharing'},
+         {label:'Flagstaff Mountain RV & Campground',url:'https://www.google.com/maps/search/?api=1&query=Flagstaff+Mountain+RV+%26+Campground'}
+       ]},
+      {id:'0-2',type:'lodging',loc:'Flagstaff, AZ',title:'Kings House Motor Hotel',
+       detail:'Check-in',notes:'Kings House Motor Hotel · Flagstaff, AZ',
+       conf:'93142EE003599',
+       links:[{label:'Kings House Motor Hotel',url:'https://www.google.com/maps/search/?api=1&query=Kings+House+Motor+Hotel'}]}
+    ]},
+  { label:'Fri 5/15',title:'Overland Expo',sub:'Day 1 · Fort Tuthill',
+    stops:[
+      {id:'1-0',type:'drive',loc:'Flagstaff → Fort Tuthill',title:'10-Min Drive',
+       detail:'To Fort Tuthill County Park',
+       notes:'Overland Expo West · Fort Tuthill County Park',conf:null,
+       links:[{label:'Fort Tuthill County Park',url:'https://maps.app.goo.gl/1H2GfVK5hTnri6yv7'}]},
+      {id:'1-1',type:'activity',loc:'Flagstaff, AZ',title:'Overland Expo West 2026',
+       detail:'All day',
+       notes:'Full day at Expo. Check the Events & Classes Schedule for sessions, demos, and vendor halls throughout the day.',
+       conf:null,
+       links:[{label:'Events & Classes Schedule',url:'https://drive.google.com/file/d/1754SJwgyT7dhA3kcMDGQrHyf-grgDdjs/view?usp=sharing'}]},
+      {id:'1-2',type:'lodging',loc:'Flagstaff, AZ',title:'Kings House Motor Hotel',
+       detail:'Night 2',notes:'Kings House Motor Hotel · Flagstaff, AZ',conf:'93142EE003599',
+       links:[{label:'Kings House Motor Hotel',url:'https://www.google.com/maps/search/?api=1&query=Kings+House+Motor+Hotel'}]}
+    ]},
+  { label:'Sat 5/16',title:'Expo → Vegas',sub:'Leave Expo by noon',
+    stops:[
+      {id:'2-0',type:'drive',loc:'Flagstaff → Fort Tuthill',title:'Morning Drive to Expo',
+       detail:'10 min',notes:'Final morning at Overland Expo West · Fort Tuthill County Park',conf:null,
+       links:[{label:'Fort Tuthill County Park',url:'https://maps.app.goo.gl/1H2GfVK5hTnri6yv7'}]},
+      {id:'2-1',type:'activity',loc:'Flagstaff, AZ',title:'Overland Expo West 2026',
+       detail:'Morning only · Wrap up by 11:30 AM',
+       notes:'Check Events & Classes Schedule for Saturday morning sessions. Wrap up in time to leave by noon.',conf:null,
+       links:[{label:'Events & Classes Schedule',url:'https://drive.google.com/file/d/1754SJwgyT7dhA3kcMDGQrHyf-grgDdjs/view?usp=sharing'}]},
+      {id:'2-2',type:'drive',loc:'Flagstaff → Las Vegas',title:'3h 45min Drive',
+       detail:'Depart by 12:00 PM',
+       notes:'Leave Flagstaff by 12pm to arrive Las Vegas by ~4pm.',
+       alert:'Depart by 12:00 PM',conf:null,
+       links:[{label:'Flagstaff to Las Vegas',url:'https://maps.app.goo.gl/ehGDa71Hyc5fvJxz7'}]},
+      {id:'2-3',type:'lodging',loc:'Las Vegas, NV',title:'Homewood Suites by Hilton',
+       detail:'Las Vegas Airport',
+       notes:'Homewood Suites by Hilton Las Vegas Airport',conf:'86205431',
+       links:[{label:'Homewood Suites Las Vegas Airport',url:'https://maps.app.goo.gl/F23TkHcUXbi3tx9i9'}]}
+    ]},
+  { label:'Sun 5/17',title:'St. George',sub:"Deborah flies in · Retirement Scouting",
+    stops:[
+      {id:'3-0',type:'fly',loc:'OAK / SFO → LAS',title:"Deborah's Flight",
+       detail:'Land 11:00 AM – 12:30 PM',
+       notes:'Southwest has multiple morning non-stops from OAK. Look for flights landing between 11am and 12:30pm to allow time to get on the road by 1:30pm.',
+       conf:null,links:[]},
+      {id:'3-1',type:'drive',loc:'Las Vegas → St. George',title:'1.5 – 2 Hour Drive',
+       detail:'Depart by 1:30 PM · Arrive by 3:30 PM',
+       notes:'Aim to be on the road by 1:30pm. Arrive St. George by ~3:30pm in time for retirement community scouting.',
+       alert:'Depart by 1:30 PM',conf:null,
+       links:[{label:'Las Vegas to St. George',url:'https://maps.app.goo.gl/81GJkGgFTyYuM4sP6'}]},
+      {id:'3-2',type:'activity',loc:'St. George, UT',title:'Retirement Community Scouting',
+       detail:'Arrive by 3:30 PM',
+       notes:'Communities to scout on the way in:\n• SunRiver\n• Desert Color\n• Entrada at Snow Canyon',conf:null,
+       links:[
+         {label:'SunRiver',url:'https://www.sunriver.com/'},
+         {label:'Desert Color',url:'https://desertcolor.com/'},
+         {label:'Entrada at Snow Canyon',url:'https://www.golfentrada.com/'}
+       ]},
+      {id:'3-3',type:'activity',loc:'St. George, UT',title:'Snow Canyon Overlook',
+       detail:'Scenic stop — ideal in late afternoon light',
+       notes:'Snow Canyon Scenic Overlook offers a breathtaking vantage point above the canyon, showcasing the dramatic contrast between red Navajo sandstone and black volcanic basalt.\n\n• Panoramic views of the entire canyon floor and surrounding cinder cones\n• Easily accessible paved paths — a quick and convenient stop\n• Excellent lighting for photography, particularly in the late afternoon',
+       conf:null,
+       links:[{label:'Snow Canyon Scenic Overlook',url:'https://maps.app.goo.gl/ox6fYZ4H1ycL1zAB8'}]},
+      {id:'3-4',type:'lodging',loc:'St. George, UT',title:'Hyatt Place St. George',
+       detail:'Convention Center · PIN: 3647',
+       notes:'Hyatt Place St. George / Convention Center\nPIN: 3647',conf:'5677873626',
+       links:[{label:'Hyatt Place St. George',url:'https://maps.app.goo.gl/TyMQvZQG4uW5cBLN9'}]}
+    ]},
+  { label:'Mon 5/18',title:'Zion',sub:'The Narrows + eBike',
+    stops:[
+      {id:'4-0',type:'drive',loc:'St. George → Springdale',title:'50-Min Drive',
+       detail:'Depart 6:30 AM',
+       notes:'6:30 AM – Depart St. George. The drive is approximately 50 minutes. Leaving early ensures you secure parking at the visitor center or in Springdale before the 8:00 AM rush.',
+       alert:'Depart 6:30 AM',conf:null,
+       links:[{label:'St. George to Springdale',url:'https://maps.app.goo.gl/D7xLtbN995NAVv7C7'}]},
+      {id:'4-1',type:'checkin',loc:'Zion, UT',title:'Zion Outfitter — Narrows Bib Fitting',
+       detail:'By 8:00 AM · Narrows Bib Package',
+       notes:'Zion Outfitter by 8am for gear fitting ("Narrows Bib" package) — typically takes 15–20 minutes.\n\nAfter fitting, walk across the pedestrian bridge to the Zion Canyon Visitor Center for pins, patches, and passport stamps — get in line for the shuttle.',
+       conf:'265918',
+       links:[{label:'Zion Outfitter',url:'https://maps.app.goo.gl/PRiFB36KtAXYZdsj7'}]},
+      {id:'4-2',type:'visitor',loc:'Zion, UT',title:'Zion Canyon Visitor Center',
+       detail:'8:30 AM · Stamps, pins, patches · Shuttle queue',
+       notes:'Collect passport stamps, pins, and patches. Get in line for the shuttle here — lines build quickly after 8:30am.',
+       conf:null,
+       links:[{label:'Zion Canyon Visitor Center',url:'https://maps.app.goo.gl/YEkLDX8Mky3wpoPT7'}]},
+      {id:'4-3',type:'activity',loc:'Zion, UT',title:'Hike the Narrows',
+       detail:'9:00 AM · Shuttle to Temple of Sinawava',
+       notes:'9:00 AM – Board the shuttle to the final stop, Temple of Sinawava. Enjoy hiking the Narrows upstream into the canyon.\n\nOn your way back down via shuttle, stop at Zion Lodge for a break.\n\nLower Emerald Pool Trail: Easy 1.2-mile round trip walk that takes you behind a waterfall dripping from the cliffs above — a great cooldown hike.',
+       conf:null,
+       links:[{label:'Temple of Sinawava',url:'https://maps.app.goo.gl/zugxgPAVjUtBwUWE6'}]},
+      {id:'4-4',type:'activity',loc:'Zion, UT',title:'eBike Rental',
+       detail:'Midday · Zion Outfitter',
+       notes:'Zion Outfitter eBike Rental — explore the canyon road and surrounding area at your own pace.',
+       conf:'265930',links:[]},
+      {id:'4-5',type:'lodging',loc:'Springdale, UT',title:'Hampton Inn & Suites',
+       detail:'Springdale / Zion National Park',
+       notes:'Hampton Inn & Suites Springdale/Zion National Park offers a classic lodge-style atmosphere with modern comforts. Provides a free shuttle service and an outdoor pool. Known for its reliable hot breakfast and great views of the surrounding red rocks.',
+       conf:'80218979',
+       links:[{label:'Hampton Inn & Suites Springdale',url:'https://www.hilton.com/en/hotels/sguzihx-hampton-suites-springdale-zion-national-park/'}]}
+    ]},
+  { label:'Tue 5/19',title:'Bryce Canyon',sub:'Hoodoos + Stargazing',
+    stops:[
+      {id:'5-0',type:'drive',loc:'Zion → East Entrance',title:'Zion-Mount Carmel Tunnel',
+       detail:'1.1-mile engineering marvel',
+       notes:'You will pass through this 1.1-mile engineering marvel. Allow extra time for the slow crawl — oversized vehicles require a special ranger escort and one-way traffic control.',
+       conf:null,
+       links:[{label:'Zion-Mount Carmel Tunnel',url:'https://maps.app.goo.gl/M7oY2QdGdxQHM3Pn8'}]},
+      {id:'5-1',type:'activity',loc:'East Zion',title:'Scenic Stops Along the Way',
+       detail:'Canyon Overlook · Checkerboard Mesa · Red Canyon',
+       notes:'Canyon Overlook Trail: Located just east of the tunnel, this 1-mile round-trip hike provides an incredible panoramic view of the switchbacks you just drove up, offering a great perspective for photography and video content.\n\nCheckerboard Mesa: Once through the tunnel, keep an eye out for this distinctively etched sandstone mountain — the cross-hatch pattern is caused by natural weathering along horizontal bedding planes and vertical joints.\n\nRed Canyon: Shortly before arriving at the Bryce Canyon entrance, you will pass through the vibrant arches of Red Canyon. A completely different color palette from Bryce — worth slowing down for.',
+       conf:null,
+       links:[
+         {label:'Canyon Overlook Trail',url:'https://maps.app.goo.gl/dSprLx4KfbdJgBuZA'},
+         {label:'Checkerboard Mesa',url:'https://maps.app.goo.gl/6VTSX5vuNTd96oE8A'},
+         {label:'Red Canyon',url:'https://maps.app.goo.gl/YFxa5BTgZyTxrkxx8'}
+       ]},
+      {id:'5-2',type:'drive',loc:'Springdale → Bryce Canyon',title:'~2 Hour Drive',
+       detail:'85 miles · Allow extra time to explore',
+       notes:'The drive from Springdale to Bryce Canyon is approximately 85 miles. While it can be driven in two hours, allow more time to explore the unique geography of the East Canyon section.',
+       conf:null,
+       links:[{label:'Springdale to Bryce Canyon',url:'https://maps.app.goo.gl/WchnebpBBDyDUr7bA'}]},
+      {id:'5-3',type:'visitor',loc:'Bryce Canyon, UT',title:'Bryce Canyon Visitor Center',
+       detail:'Passport stamps · pins · patches',
+       notes:'Stop at the Bryce Canyon Visitor Center to secure your official documentation, collect your passport stamps, pins, and patches for your collection.',
+       conf:null,
+       links:[{label:'Bryce Canyon Visitor Center',url:'https://maps.app.goo.gl/6b4VKuYiSVzQyx5L9'}]},
+      {id:'5-4',type:'activity',loc:'Bryce Canyon, UT',title:"Navajo Loop & Queen's Garden Trail",
+       detail:'Afternoon · ~3 miles',
+       notes:"Start at Sunrise Point and descend via the Queen's Garden trail to see the formation that resembles Queen Victoria. Ascend via the Navajo Loop to experience the famous \"Wall Street\" section — a narrow switchback canyon with towering Douglas Fir trees reaching for the light. Covers about 3 miles and provides the park's most iconic perspectives.\n\nIf time permits: drive the 18-mile main park road to Rainbow and Yovimpa Points — the park's highest elevations — stopping at the various overlooks along the way.",
+       conf:null,
+       links:[
+         {label:'Sunrise Point',url:'https://maps.app.goo.gl/prNSqtqbnLPbeQSi7'},
+         {label:"Queen's Garden Trail",url:'https://maps.app.goo.gl/UAA3mJXdHwjx5CGMA'},
+         {label:'Navajo Loop',url:'https://maps.app.goo.gl/KMNhSpxnyFh2jaE39'},
+         {label:'"Wall Street"',url:'https://maps.app.goo.gl/efN3eZYT8NnjWFTn6'},
+         {label:'Rainbow Point',url:'https://maps.app.goo.gl/XhjERmcirHXwaqUz9'},
+         {label:'Yovimpa Point',url:'https://maps.app.goo.gl/DUPNmbuQMCYeKmQC8'}
+       ]},
+      {id:'5-5',type:'activity',loc:'Bryce Canyon, UT',title:'Sunset Point + Stargazing Adventure',
+       detail:'8:30 PM – 10:00 PM',
+       notes:'Bryce Canyon is a designated International Dark Sky Park. Because of its high elevation and distance from city lights, the stargazing here is exceptional.\n\nSunset Point (by 8:30pm): The ideal location to watch the late-afternoon sun set the orange and pink limestone hoodoos "on fire" with glowing light.\n\nStargazing: If the sky is clear, stay at the rim for an hour after sunset. On a moonless night, the Milky Way is often visible to the naked eye.\n\nBryce Canyon Stargazing Adventure (8:30–10pm)\n175 S Hwy 63, Bryce Canyon City, UT 84764',
+       conf:'BRY-91522908',
+       links:[
+         {label:'Sunset Point',url:'https://maps.app.goo.gl/HNG3BNZM9Xov36Fi6'},
+         {label:'Bryce Canyon Stargazing',url:'https://brycecanyonstargazing.com/'}
+       ]},
+      {id:'5-6',type:'lodging',loc:'Bryce Canyon, UT',title:"Best Western Plus Ruby's Inn",
+       detail:'Just outside the park gates',
+       notes:"Best Western Plus Ruby's Inn is a local institution located just outside the park gates. It features a massive general store — perfect for restocking supplies or finding high-quality local crafts. The property offers a wide range of amenities, including multiple dining options and an indoor pool.",
+       conf:'519124248',
+       links:[{label:"Best Western Plus Ruby's Inn",url:'https://maps.app.goo.gl/PbMAwnskKZdbfZD8A'}]}
+    ]},
+  { label:'Wed 5/20',title:'Capitol Reef',sub:'Scenic Byway 12 · Gifford Pies',
+    stops:[
+      {id:'6-0',type:'drive',loc:'Bryce → Capitol Reef',title:'Scenic Byway 12',
+       detail:"Depart 8:00 AM · One of the world's most beautiful drives",
+       notes:'Scenic Byway 12 — often cited as one of the most beautiful drives in the world — connects Bryce Canyon to Capitol Reef. Following your guidebook\'s strategy, this day prioritizes the journey as much as the destination.',
+       alert:'Depart 8:00 AM',conf:null,
+       links:[{label:'Bryce Canyon to Torrey',url:'https://maps.app.goo.gl/GwyE7ncGqT5tmiy26'}]},
+      {id:'6-1',type:'activity',loc:'Cottonwood Canyon',title:'Overland Detour',
+       detail:'Kodachrome Basin · Grosvenor Arch · Cottonwood Canyon Road',
+       notes:'Early Departure (8:00 AM): Leave Bryce Canyon early to allow time for both the dirt-road excursion and the scenic stops on Byway 12.\n\nKodachrome Basin / Cottonwood Canyon Road: From Cannonville, head south toward Kodachrome Basin State Park. The pavement ends after 9 miles.\n\nGrosvenor Arch: Continue for 10 miles on the graded dirt of Cottonwood Canyon Road. This massive double arch towers 150 feet high and offers incredible opportunities for static "drive-by" filming.\n\nRejoining the Main Route: Backtrack to Cannonville (approx. 45-minute return) to head east on Byway 12 toward Escalante.\n\n⚠️ Impassable when wet. If it has rained recently, stick to the pavement on Byway 12.',
+       conf:null,
+       links:[
+         {label:'Cottonwood Canyon Road',url:'https://maps.app.goo.gl/jtTChUNq33QgmCkE9'},
+         {label:'Kodachrome Basin State Park',url:'https://maps.app.goo.gl/cRvktfnCcqWiTPV59'},
+         {label:'Grosvenor Arch',url:'https://maps.app.goo.gl/BeAcggybULzsCTLx9'}
+       ]},
+      {id:'6-2',type:'activity',loc:'Escalante → Boulder, UT',title:'Drive Byway 12',
+       detail:'Kiva Koffeehouse · The Hogback · Lunch in Boulder',
+       notes:"Kiva Koffeehouse: Stop here for a mid-morning break. The architecture is built into the cliffside and offers panoramic views of the Escalante River canyon.\n\nThe \"Hogback\": This is the most famous stretch of Byway 12 between Escalante and Boulder. The highway follows a narrow ridge with dramatic drops on both sides.\n\nBoulder, Utah (Lunch): Stop for a farm-to-table meal at Hell's Backbone Grill — open for dinner, but their Little Bone food truck serves breakfast and lunch from 7:30 AM – 2:00 PM.",
+       conf:null,
+       links:[
+         {label:'Kiva Koffeehouse',url:'https://maps.app.goo.gl/wfhPJScmd4qeUWtS8'},
+         {label:'The "Hogback"',url:'https://maps.app.goo.gl/Sb5i93GPDu9f1JLc9'},
+         {label:'Boulder, Utah',url:'https://maps.app.goo.gl/RzCkCwnpcqhAKVtYA'},
+         {label:"Hell's Backbone Grill",url:'https://maps.app.goo.gl/CH93kd3sw2wHENtY7'},
+         {label:'Little Bone Food Truck',url:'https://maps.app.goo.gl/RxnF8CJ59r2jDzXa7'}
+       ]},
+      {id:'6-3',type:'visitor',loc:'Capitol Reef, UT',title:'Capitol Reef Visitor Center',
+       detail:'Arrive by 3:30 PM · Stamps, pins, patches',
+       notes:'Arrive by 3:30 PM to collect your passport stamps, pins, and patches. Rangers here can also provide current road condition updates.',
+       conf:null,
+       links:[{label:'Capitol Reef Visitor Center',url:'https://maps.google.com/?cid=10748979905868251805'}]},
+      {id:'6-4',type:'activity',loc:'Capitol Reef, UT',title:'Gifford House + Fruita Orchards',
+       detail:'⭐ Priority #1 — Go directly here after Visitor Center',
+       notes:'The Gifford House (Priority #1): Head directly here after the visitor center. They are famous for fresh-baked fruit pies (apple, peach, cherry) but frequently sell out by mid-afternoon.\n\nFruita Orchards: Take a short stroll through the historic orchards adjacent to the Gifford House. In May, the trees are typically in bloom, providing a lush contrast to the red cliffs.',
+       conf:null,
+       links:[
+         {label:'The Gifford House',url:'https://maps.app.goo.gl/UrJyZUN4opmH9H7HA'},
+         {label:'Fruita Orchards',url:'https://maps.app.goo.gl/TK6J85EbtpFKmwA17'}
+       ]},
+      {id:'6-5',type:'lodging',loc:'Torrey, UT',title:'Capitol Reef Resort',
+       detail:'Luxury cabins / Conestoga Wagons',
+       notes:'Capitol Reef Resort offers a mix of traditional luxury and upscale "glamping" in luxury cabins or Conestoga Wagons.',
+       conf:'RGD6HKDXH',
+       links:[{label:'Capitol Reef Resort',url:'https://capitolreefresort.com/'}]}
+    ]},
+  { label:'Thu 5/21',title:'Cathedral Valley → Moab',sub:'Temples of Sun & Moon · Goblin Valley',
+    stops:[
+      {id:'7-0',type:'visitor',loc:'Capitol Reef, UT',title:'Capitol Reef Visitor Center',
+       detail:'If needed from Wed',
+       notes:'Capitol Reef National Park Visitor Center — if you ran out of time on Wednesday. Collect your passport stamps and any remaining pins or patches. Rangers here can provide a final check on road conditions for the dirt sections of the park.',
+       conf:null,
+       links:[{label:'Capitol Reef Visitor Center',url:'https://maps.google.com/?cid=10748979905868251805'}]},
+      {id:'7-1',type:'drive',loc:'Capitol Reef',title:'Drive to Capitol Gorge Trailhead',
+       detail:'Paved Scenic Drive → dirt Capitol Gorge Road',
+       notes:'Drive the paved Scenic Drive until it transitions into the dirt Capitol Gorge Road — a winding, narrow route through towering canyon walls that is a perfect cinematic stretch for the GX.',
+       conf:null,
+       links:[{label:'Capitol Gorge Trailhead',url:'https://maps.google.com/?cid=1259692990549847128'}]},
+      {id:'7-2',type:'activity',loc:'Capitol Gorge, UT',title:'Capitol Gorge Trail',
+       detail:'Morning hike · Pioneer Register',
+       notes:'Capitol Gorge Trailhead is the destination for one of the park\'s most scenic drives. At the end of the road, take the short, level walk to the Pioneer Register, where early settlers carved their names into the canyon walls — a remarkable piece of living history.',
+       conf:null,
+       links:[{label:'Capitol Gorge Trailhead',url:'https://maps.google.com/?cid=1259692990549847128'}]},
+      {id:'7-3',type:'drive',loc:'Cathedral Valley',title:'Drive to Temples of Sun & Moon',
+       detail:'Caineville Wash Road · Out-and-back',
+       notes:'Take the Caineville Wash Road eastern entrance as an out-and-back to the Temples of the Sun and Moon — the #1 overland experience of the entire Mighty Five.\n\nDrive in, get your hero shots of the GX 550 in front of the massive 400-foot monoliths, have a quick snack, and drive back out to the highway.\n\n⚠️ Impassable when wet. Confirm conditions before departure.',
+       conf:null,links:[]},
+      {id:'7-4',type:'activity',loc:'Cathedral Valley, UT',title:'Temples of the Sun & Moon',
+       detail:'⭐ #1 Overland Experience of the Mighty Five · Budget 2.5–3 hrs',
+       notes:'Two 400-foot freestanding sandstone monoliths rising from a completely flat desert plain — nothing around them, no context, just massive towers against open sky. Unlike anything else on the Mighty Five loop.\n\nPark the GX, take your time with hero shots, have a snack, and enjoy the solitude.',
+       conf:null,
+       links:[
+         {label:'Temple of the Sun',url:'https://maps.app.goo.gl/p6AfD1TtcVmss1tf9'},
+         {label:'Temple of the Moon',url:'https://maps.app.goo.gl/LRSdS3QQBeqWFc3r9'}
+       ]},
+      {id:'7-5',type:'drive',loc:'Capitol Reef → Moab',title:'2.5 Hour Drive to Moab',
+       detail:'Via UT-24 and I-70',
+       notes:'Drive 2.5 hours via UT-24 and I-70. While the interstate section is brief, the route through the San Rafael Swell is visually stunning.',
+       conf:null,links:[]},
+      {id:'7-6',type:'activity',loc:'San Rafael Swell',title:'Hanksville + Goblin Valley',
+       detail:'Afternoon detour',
+       notes:'Hanksville: This remote town is a great place to refuel. It feels like a lunar landscape and is home to the Mars Desert Research Station (visible from the road).\n\nGoblin Valley State Park: Features thousands of small "hoodoos" or "goblins" and is one of the most unique geological sites in Utah. Plan 90 minutes here.',
+       conf:null,
+       links:[
+         {label:'Hanksville',url:'https://maps.app.goo.gl/p9XTdr9KnCJGSDxb8'},
+         {label:'Goblin Valley State Park',url:'https://maps.app.goo.gl/BfuWPq1ojdueAqKf9'}
+       ]},
+      {id:'7-7',type:'lodging',loc:'Moab, UT',title:'My Place Hotel — Moab',
+       detail:'Night 1 of 3',
+       notes:'My Place Hotel-Moab is the strongest contender for affordability. It focuses on essential comforts and is frequently cited by travelers as the best value-for-money stay in the area.\nItinerary #: 19777B3608502',
+       conf:'31674SG064439',
+       links:[{label:'My Place Hotel-Moab',url:'https://maps.app.goo.gl/UEY4MbxD8CLLvPpFA'}]}
+    ]},
+  { label:'Fri 5/22',title:'Arches',sub:'Delicate Arch Sunset',
+    stops:[
+      {id:'8-0',type:'drive',loc:'Moab → Arches NP',title:'Beat the Crowd Entry',
+       detail:'Enter park 6:30 – 7:00 AM',
+       notes:'"Beat the Crowd" Entry: To secure the best light and avoid the entry rush, aim to enter the park between 6:30 AM and 7:00 AM.',
+       alert:'Enter park by 7:00 AM',conf:null,links:[]},
+      {id:'8-1',type:'visitor',loc:'Arches NP, UT',title:'Arches Visitor Center',
+       detail:'Passport stamps · pins · patches',
+       notes:'Start here for your passport stamps, pins, and patches. The store is managed by the Natural History Association and offers a high-quality selection of memorabilia.',
+       conf:null,
+       links:[{label:'Arches Visitor Center',url:'https://maps.app.goo.gl/Hu52i5bCibnyk2xe8'}]},
+      {id:'8-2',type:'activity',loc:'Arches NP, UT',title:'The Windows Section',
+       detail:'North Window · South Window · Turret Arch · Double Arch · Balanced Rock',
+       notes:'The Windows Section & Double Arch: This is the "best bang for your buck" area in the park. The easy 1-mile loop takes you to North Window, South Window, and Turret Arch.\n\nDouble Arch: Directly across the parking lot — a spectacular spot for filming those towering sandstone overheads.\n\nBalanced Rock: A quick 15-minute stop on your way out of the Windows section. This 128-foot formation is an icon of the park and looks incredible in the morning sun.',
+       conf:null,
+       links:[
+         {label:'Windows Section',url:'https://maps.app.goo.gl/cwgQa6pdyRmN9LCt6'},
+         {label:'North Window',url:'https://maps.app.goo.gl/xqP2ToN22hvJcPREA'},
+         {label:'South Window',url:'https://maps.app.goo.gl/tZNHJRKA85dLeYvB8'},
+         {label:'Turret Arch',url:'https://maps.app.goo.gl/7gZ4iARLgi9boerA9'},
+         {label:'Double Arch',url:'https://maps.app.goo.gl/XiE4DWrwqpydr3uZA'},
+         {label:'Balanced Rock',url:'https://maps.app.goo.gl/p3qVbpQ4MrCJuqSf9'}
+       ]},
+      {id:'8-3',type:'activity',loc:'Moab, UT',title:'Midday Break in Moab',
+       detail:'Download footage · recharge batteries · browse gear',
+       notes:'Since Arches offers very little shade, the guidebook suggests heading back to Moab for a few hours. This is a perfect time to download footage, recharge batteries, or browse for gear at shops like Moab Gear Trader.',
+       conf:null,links:[]},
+      {id:'8-4',type:'activity',loc:'Arches NP, UT',title:'Delicate Arch Trail + Sunset',
+       detail:'4:00 PM – Sunset · Stay for stars',
+       notes:"Delicate Arch Trail (4:00 PM – Sunset): The park's signature hike — 3 miles round trip, with a steady climb on open slickrock.\n\nFilming & Sunset: The \"Golden Hour\" here is unmatched. As the sun dips, the arch turns a fiery orange-red. It's the perfect place to capture high-resolution static shots of the landscape.\n\nStay for the Stars: Arches is an International Dark Sky Park. If you stay 30–60 minutes after sunset, you can capture the first emergence of the stars through the arch's frame.",
+       conf:null,
+       links:[{label:'Delicate Arch Trail',url:'https://maps.app.goo.gl/oq86eCjZySZmp8DC6'}]},
+      {id:'8-5',type:'lodging',loc:'Moab, UT',title:'My Place Hotel — Moab',
+       detail:'Night 2',
+       notes:'My Place Hotel-Moab\nItinerary #: 19777B3608502',conf:'31674SG064439',
+       links:[{label:'My Place Hotel-Moab',url:'https://maps.app.goo.gl/UEY4MbxD8CLLvPpFA'}]}
+    ]},
+  { label:'Sat 5/23',title:'Canyonlands',sub:'Mesa Arch Sunrise · Shafer Trail',
+    stops:[
+      {id:'9-0',type:'drive',loc:'Moab → Canyonlands',title:'Drive to Island in the Sky',
+       detail:'1,000 feet above the surrounding terrain',
+       notes:"Today is the day to truly utilize your vehicle's capabilities. You'll be exploring the Island in the Sky district, which sits 1,000 feet above the surrounding terrain.",
+       conf:null,
+       links:[{label:'Moab to Canyonlands',url:'https://maps.app.goo.gl/kt752rW7VKqnnu3b6'}]},
+      {id:'9-1',type:'activity',loc:'Canyonlands, UT',title:'Mesa Arch at Sunrise',
+       detail:'Most famous sunrise spot in the Southwest',
+       notes:'Mesa Arch (Sunrise): This is the most famous sunrise spot in the Southwest. The underside of the arch glows a brilliant orange as the sun rises over the horizon.\n\n⚠️ Very crowded with photographers. To get "the shot," you\'d need to be parked 45 minutes before sunrise.',
+       conf:null,
+       links:[
+         {label:'Mesa Arch',url:'https://maps.app.goo.gl/C968wN9y9gXuW6vY6'},
+         {label:'Parking Area',url:'https://maps.app.goo.gl/yQ2w3rMGrNjq6p4Z7'}
+       ]},
+      {id:'9-2',type:'visitor',loc:'Canyonlands, UT',title:'Island in the Sky Visitor Center',
+       detail:'🎉 Final Mighty Five stamps!',
+       notes:'Stop here for your final set of pins, patches, and passport stamps. This completes your "Mighty Five" collection! 🎉',
+       conf:null,
+       links:[{label:'Island in the Sky Visitor Center',url:'https://maps.app.goo.gl/XvCtabDGeAWggWB7A'}]},
+      {id:'9-3',type:'activity',loc:'Canyonlands, UT',title:'Shafer Trail Overland Loop',
+       detail:'Afternoon · Legendary 1,500-ft descent',
+       notes:'The Shafer Trail is a legendary unpaved road that descends 1,500 feet through a series of dramatic switchbacks — the highlight of the entire GX project.\n\nThe Route: Start at the top (near the Visitor Center) and descend. The road is well-maintained but narrow with massive exposure.\n\nFilming: This is the best place for your "drive-by" and action footage. The contrast of the silver vehicle against the deep red switchbacks is cinematic gold.\n\nThe Loop: Take the Shafer Trail to Potash Road, which leads all the way back to Moab along the Colorado River, passing the "Thelma & Louise" point.',
+       conf:null,
+       links:[
+         {label:'Shafer Trail',url:'https://maps.app.goo.gl/hCPT2LCZqdhuUbok6'},
+         {label:'Potash Road',url:'https://maps.app.goo.gl/E65CCt17NtWzoWax6'},
+         {label:'Gooseneck Overlook',url:'https://maps.app.goo.gl/aDXKubS4AjPnKKEd9'},
+         {label:'Thelma & Louise Point',url:'https://maps.app.goo.gl/4BTdmku3t1T1Yrzh6'},
+         {label:'Potash Ponds',url:'https://maps.app.goo.gl/orh8sbq7GWuWEC4W9'},
+         {label:'Elvis Rock',url:'https://maps.app.goo.gl/tZDU8N5moeWGFYUK7'},
+         {label:'Corona Arch',url:'https://maps.app.goo.gl/yEKuktCahD6vvcVi9'},
+         {label:'Potash Road Petroglyphs',url:'https://maps.app.goo.gl/Grmzaq4jqQR3G1PD6'},
+         {label:'Wall Street',url:'https://maps.app.goo.gl/jLivVa4xZ3KSfGRM7'}
+       ]},
+      {id:'9-4',type:'lodging',loc:'Moab, UT',title:'My Place Hotel — Moab',
+       detail:'Night 3',
+       notes:'My Place Hotel-Moab\nItinerary #: 19777B3608502',conf:'31674SG064439',
+       links:[{label:'My Place Hotel-Moab',url:'https://maps.app.goo.gl/UEY4MbxD8CLLvPpFA'}]}
+    ]},
+  { label:'Sun 5/24',title:'Dead Horse Point → Reno',sub:'Final views · Long drive home',
+    stops:[
+      {id:'10-0',type:'drive',loc:'Moab → Dead Horse Point',title:'Drive to Dead Horse Point',
+       detail:'On the way out of Moab toward the highway',
+       notes:'Dead Horse Point State Park is on the way out of Moab toward the highway — a perfectly efficient final stop with no backtracking required.',
+       conf:null,links:[]},
+      {id:'10-1',type:'activity',loc:'Dead Horse Point, UT',title:'Dead Horse Point State Park',
+       detail:'Meander Overlook · Rim Overlook',
+       notes:'This park offers a "big picture" view of the Canyonlands terrain you just explored and is much faster to navigate than the national parks.\n\nVisit:\n• Meander Overlook\n• Rim Overlook',
+       conf:null,
+       links:[
+         {label:'Dead Horse Point State Park',url:'https://maps.app.goo.gl/uPPJiF1Q9FgfxhSG9'},
+         {label:'Meander Overlook',url:'https://maps.app.goo.gl/MMfv6f36crLnpScg9'},
+         {label:'Rim Overlook',url:'https://maps.app.goo.gl/EASe5LoaXNaBbzVd9'}
+       ]},
+      {id:'10-2',type:'drive',loc:'Moab → Reno, NV',title:'Long Drive to Reno',
+       detail:'Lodging TBD',
+       notes:'Drive from Moab toward Reno. Lodging not yet confirmed — book before departure.',
+       conf:null,
+       links:[{label:'Moab to Reno',url:'https://maps.app.goo.gl/7fsGD254YT6Xa17N7'}]},
+      {id:'10-3',type:'lodging',loc:'Reno, NV',title:'Lodging — TBD',
+       detail:'To be booked',notes:'Lodging not yet confirmed. Book before departure.',conf:null,links:[]}
+    ]},
+  { label:'Mon 5/25',title:'Home',sub:'Reno → San Ramon · Memorial Day',
+    stops:[
+      {id:'11-0',type:'drive',loc:'Reno → San Ramon',title:'Drive Home',
+       detail:'Memorial Day — watch for traffic',
+       notes:'Final drive home to San Ramon, CA. Memorial Day traffic — allow extra time and consider leaving early.',
+       conf:null,links:[]}
+    ]}
+];
+
+const KEY='mightyfive_v1';
+let done=new Set(JSON.parse(localStorage.getItem(KEY)||'[]'));
+let day=0;
+const totalStops=DAYS.reduce((a,d)=>a+d.stops.length,0);
+function save(){localStorage.setItem(KEY,JSON.stringify([...done]));}
+const $=id=>document.getElementById(id);
+const badgeLabel={drive:'Drive',activity:'Activity',lodging:'Lodging',fly:'Fly',checkin:'Check-In',visitor:'Visitor Ctr'};
+
+function updateProgress(){
+  const pct=totalStops?Math.round(done.size/totalStops*100):0;
+  $('pct').textContent=pct+'%';
+  $('bar-fill').style.width=pct+'%';
+}
+function buildTabs(){
+  const el=$('tabs');el.innerHTML='';
+  DAYS.forEach((d,i)=>{
+    const allDone=d.stops.every(s=>done.has(s.id));
+    const t=document.createElement('div');
+    t.className='tab'+(i===day?' active':'')+(allDone?' alldone':'');
+    t.innerHTML=`<div class="tab-lbl">${d.label}</div>`;
+    t.addEventListener('click',()=>selectDay(i));
+    el.appendChild(t);
+  });
+}
+function buildContent(){
+  const d=DAYS[day];
+  let h=`<div class="day-hdr"><h2>${d.title}</h2><p>${d.sub}</p></div>`;
+  d.stops.forEach(s=>{
+    const isDone=done.has(s.id);
+    const linkHtml=s.links&&s.links.length
+      ?`<div class="links-wrap">${s.links.map(l=>`<a class="link-pill" href="${l.url}" target="_blank" rel="noopener">📍 ${l.label}</a>`).join('')}</div>`
+      :'';
+    h+=`
+    <div class="card${isDone?' done':''}" data-id="${s.id}">
+      <div class="card-top" onclick="toggleExp('${s.id}')">
+        <span class="badge b-${s.type}">${badgeLabel[s.type]||s.type}</span>
+        <div class="card-info">
+          <div class="card-loc">${s.loc}</div>
+          <div class="card-title">${s.title}</div>
+          ${s.detail?`<div class="card-detail">${s.detail}</div>`:''}
+        </div>
+        <div class="card-right">
+          <div class="done-btn${isDone?' on':''}" onclick="event.stopPropagation();toggleDone('${s.id}')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <polyline points="2,6.5 5.5,10 11,3" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <svg class="chev" viewBox="0 0 16 16" fill="currentColor"><path d="M8 10.5L2.5 5h11z"/></svg>
+        </div>
+      </div>
+      <div class="card-body" id="b-${s.id}">
+        <div class="card-body-inner">
+          ${s.alert?`<div class="alert-tag">⏰ ${s.alert}</div><br>`:''}
+          <div class="notes">${s.notes}</div>
+          ${s.conf?`<div class="conf-row"><span class="conf-lbl">Conf #</span><span class="conf-val">${s.conf}</span></div>`:''}
+          ${linkHtml}
+        </div>
+      </div>
+    </div>`;
+  });
+  $('content').innerHTML=h;
+}
+function selectDay(i){
+  day=i;buildTabs();buildContent();$('content').scrollTop=0;
+  const tab=document.querySelectorAll('.tab')[i];
+  if(tab)tab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+function toggleExp(id){
+  const body=document.getElementById('b-'+id);
+  const open=body.classList.contains('open');
+  body.classList.toggle('open',!open);
+  body.closest('.card').querySelector('.chev').classList.toggle('open',!open);
+}
+function toggleDone(id){
+  done.has(id)?done.delete(id):done.add(id);save();
+  const card=document.querySelector(`.card[data-id="${id}"]`);
+  if(card){card.classList.toggle('done',done.has(id));card.querySelector('.done-btn').classList.toggle('on',done.has(id));}
+  updateProgress();buildTabs();
+}
+buildTabs();buildContent();updateProgress();
+</script>
+</body>
+</html>
