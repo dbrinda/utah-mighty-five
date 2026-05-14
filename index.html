@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -484,66 +483,90 @@ const DAYS=[
     ]}
 ];
 
-const KEY=‘mightyfive_v1’;
-let done=new Set(JSON.parse(localStorage.getItem(KEY)||’[]’));
+const KEY='mightyfive_v1';
+let done=new Set(JSON.parse(localStorage.getItem(KEY)||'[]'));
 let day=0;
 const totalStops=DAYS.reduce((a,d)=>a+d.stops.length,0);
-function save(){localStorage.setItem(KEY,JSON.stringify([…done]));}
+function save(){localStorage.setItem(KEY,JSON.stringify([...done]));}
 const $=id=>document.getElementById(id);
-const badgeLabel={drive:‘Drive’,activity:‘Activity’,lodging:‘Lodging’,fly:‘Fly’,checkin:‘Check-In’,visitor:‘Visitor Ctr’};
+const badgeLabel={drive:'Drive',activity:'Activity',lodging:'Lodging',fly:'Fly',checkin:'Check-In',visitor:'Visitor Ctr'};
 
 function updateProgress(){
-const pct=totalStops?Math.round(done.size/totalStops*100):0;
-$(‘pct’).textContent=pct+’%’;
-$(‘bar-fill’).style.width=pct+’%’;
+  const pct=totalStops?Math.round(done.size/totalStops*100):0;
+  $('pct').textContent=pct+'%';
+  $('bar-fill').style.width=pct+'%';
 }
 function buildTabs(){
-const el=$(‘tabs’);el.innerHTML=’’;
-DAYS.forEach((d,i)=>{
-const allDone=d.stops.every(s=>done.has(s.id));
-const t=document.createElement(‘div’);
-t.className=‘tab’+(i===day?’ active’:’’)+(allDone?’ alldone’:’’);
-t.innerHTML=`<div class="tab-lbl">${d.label}</div>`;
-t.addEventListener(‘click’,()=>selectDay(i));
-el.appendChild(t);
-});
+  const el=$('tabs');el.innerHTML='';
+  DAYS.forEach((d,i)=>{
+    const allDone=d.stops.every(s=>done.has(s.id));
+    const t=document.createElement('div');
+    t.className='tab'+(i===day?' active':'')+(allDone?' alldone':'');
+    t.innerHTML=`<div class="tab-lbl">${d.label}</div>`;
+    t.addEventListener('click',()=>selectDay(i));
+    el.appendChild(t);
+  });
 }
 function buildContent(){
-const d=DAYS[day];
-let h=`<div class="day-hdr"><h2>${d.title}</h2><p>${d.sub}</p></div>`;
-d.stops.forEach(s=>{
-const isDone=done.has(s.id);
-const linkHtml=s.links&&s.links.length
-?`<div class="links-wrap">${s.links.map(l=>`<a class="link-pill" href="${l.url}" target="_blank" rel="noopener">📍 ${l.label}</a>`).join('')}</div>`
-:’’;
-h+=` <div class="card${isDone?' done':''}" data-id="${s.id}"> <div class="card-top" onclick="toggleExp('${s.id}')"> <span class="badge b-${s.type}">${badgeLabel[s.type]||s.type}</span> <div class="card-info"> <div class="card-loc">${s.loc}</div> <div class="card-title">${s.title}</div> ${s.detail?`<div class="card-detail">${s.detail}</div>`:''} </div> <div class="card-right"> <div class="done-btn${isDone?' on':''}" onclick="event.stopPropagation();toggleDone('${s.id}')"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"> <polyline points="2,6.5 5.5,10 11,3" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/> </svg> </div> <svg class="chev" viewBox="0 0 16 16" fill="currentColor"><path d="M8 10.5L2.5 5h11z"/></svg> </div> </div> <div class="card-body" id="b-${s.id}"> <div class="card-body-inner"> ${s.alert?`<div class="alert-tag">⏰ ${s.alert}</div><br>`:''} <div class="notes">${s.notes}</div> ${s.conf?`<div class="conf-row"><span class="conf-lbl">Conf #</span><span class="conf-val">${s.conf}</span></div>`:''} ${linkHtml} </div> </div> </div>`;
-});
-$(‘content’).innerHTML=h;
+  const d=DAYS[day];
+  let h=`<div class="day-hdr"><h2>${d.title}</h2><p>${d.sub}</p></div>`;
+  d.stops.forEach(s=>{
+    const isDone=done.has(s.id);
+    const linkHtml=s.links&&s.links.length
+      ?`<div class="links-wrap">${s.links.map(l=>`<a class="link-pill" href="${l.url}" target="_blank" rel="noopener">📍 ${l.label}</a>`).join('')}</div>`
+      :'';
+    h+=`
+    <div class="card${isDone?' done':''}" data-id="${s.id}">
+      <div class="card-top" onclick="toggleExp('${s.id}')">
+        <span class="badge b-${s.type}">${badgeLabel[s.type]||s.type}</span>
+        <div class="card-info">
+          <div class="card-loc">${s.loc}</div>
+          <div class="card-title">${s.title}</div>
+          ${s.detail?`<div class="card-detail">${s.detail}</div>`:''}
+        </div>
+        <div class="card-right">
+          <div class="done-btn${isDone?' on':''}" onclick="event.stopPropagation();toggleDone('${s.id}')">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <polyline points="2,6.5 5.5,10 11,3" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <svg class="chev" viewBox="0 0 16 16" fill="currentColor"><path d="M8 10.5L2.5 5h11z"/></svg>
+        </div>
+      </div>
+      <div class="card-body" id="b-${s.id}">
+        <div class="card-body-inner">
+          ${s.alert?`<div class="alert-tag">⏰ ${s.alert}</div><br>`:''}
+          <div class="notes">${s.notes}</div>
+          ${s.conf?`<div class="conf-row"><span class="conf-lbl">Conf #</span><span class="conf-val">${s.conf}</span></div>`:''}
+          ${linkHtml}
+        </div>
+      </div>
+    </div>`;
+  });
+  $('content').innerHTML=h;
 }
 function selectDay(i){
-day=i;buildTabs();buildContent();$(‘content’).scrollTop=0;
-const tab=document.querySelectorAll(’.tab’)[i];
-if(tab)tab.scrollIntoView({behavior:‘smooth’,block:‘nearest’,inline:‘center’});
+  day=i;buildTabs();buildContent();$('content').scrollTop=0;
+  const tab=document.querySelectorAll('.tab')[i];
+  if(tab)tab.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
 }
 function toggleExp(id){
-const body=document.getElementById(‘b-’+id);
-const open=body.classList.contains(‘open’);
-body.classList.toggle(‘open’,!open);
-body.closest(’.card’).querySelector(’.chev’).classList.toggle(‘open’,!open);
+  const body=document.getElementById('b-'+id);
+  const open=body.classList.contains('open');
+  body.classList.toggle('open',!open);
+  body.closest('.card').querySelector('.chev').classList.toggle('open',!open);
 }
 function toggleDone(id){
-done.has(id)?done.delete(id):done.add(id);save();
-const card=document.querySelector(`.card[data-id="${id}"]`);
-if(card){card.classList.toggle(‘done’,done.has(id));card.querySelector(’.done-btn’).classList.toggle(‘on’,done.has(id));}
-updateProgress();buildTabs();
+  done.has(id)?done.delete(id):done.add(id);save();
+  const card=document.querySelector(`.card[data-id="${id}"]`);
+  if(card){card.classList.toggle('done',done.has(id));card.querySelector('.done-btn').classList.toggle('on',done.has(id));}
+  updateProgress();buildTabs();
 }
 buildTabs();buildContent();updateProgress();
 </script>
-
 <script>
   if ('serviceWorker' in navigator)
     navigator.serviceWorker.register('./sw.js');
 </script>
-
 </body>
 </html>
